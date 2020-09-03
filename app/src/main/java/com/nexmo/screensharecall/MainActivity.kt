@@ -238,7 +238,7 @@ class MainActivity : AppCompatActivity(), Session.SessionListener, PublisherKit.
         val subscriberView = subscriber!!.view
 
         val frameLayout = FrameLayout(this)
-        frameLayout.layoutParams = ViewGroup.LayoutParams(720, 1280)
+        frameLayout.layoutParams = ViewGroup.LayoutParams(p1?.videoWidth ?: 240, p1?.videoHeight ?: 320)
         frameLayout.addView(subscriberView)
         subscriberViewContainer.addView(frameLayout)
     }
