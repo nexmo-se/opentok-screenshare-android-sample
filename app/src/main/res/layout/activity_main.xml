@@ -30,12 +30,30 @@
         android:padding="2dp"
         android:background="#ffffff" />
 
-    <Button
-        android:id="@+id/sharescreen_button"
+    <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:orientation="vertical"
         android:layout_gravity="bottom|center"
-        android:layout_marginBottom="16dp"
-        android:text="Share Screen"/>
+        android:gravity="center"
+        android:layout_marginBottom="16dp">
+
+        <Button
+            android:id="@+id/sharescreen_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:text="Start Screenshare"/>
+
+        <Button
+            android:id="@+id/disconnect_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:backgroundTint="@color/colorAccent"
+            android:textColor="@android:color/white"
+            android:text="Disconnect"/>
+
+    </LinearLayout>
 
 </FrameLayout>
