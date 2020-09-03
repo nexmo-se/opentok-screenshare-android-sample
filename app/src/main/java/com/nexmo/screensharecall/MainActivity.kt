@@ -271,8 +271,4 @@ class MainActivity : AppCompatActivity(), Session.SessionListener, PublisherKit.
     override fun sendFrame(imageBuffer: ByteBuffer, width: Int, height: Int) {
         customVideoCapturer?.sendFrame(imageBuffer, width, height)
     }
-
-    override fun sendResize(width: Int, height: Int) {
-        customVideoCapturer?.resize(width, height)
-    }
 }

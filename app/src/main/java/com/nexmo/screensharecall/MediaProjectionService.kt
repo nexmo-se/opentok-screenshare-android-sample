@@ -122,8 +122,6 @@ class MediaProjectionService : Service(), ImageReader.OnImageAvailableListener {
         height = (newHeight.toDouble() / multiplication).toInt()
 
         Log.d(TAG, "Display Size resized to [$width x $height]")
-
-        sendResize(width, height)
     }
 
     private fun createVirtualDisplay() {
@@ -166,10 +164,6 @@ class MediaProjectionService : Service(), ImageReader.OnImageAvailableListener {
 
     private fun sendFrame(imageBuffer: ByteBuffer, width: Int, height: Int) {
         binder?.mediaProjectionHandler?.sendFrame(imageBuffer, width, height)
-    }
-
-    private fun sendResize(width: Int, height: Int) {
-        binder?.mediaProjectionHandler?.sendResize(width, height)
     }
 
     private fun createNotificationChannel() {

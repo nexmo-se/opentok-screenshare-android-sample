@@ -55,11 +55,6 @@ class CustomVideoCapturer : BaseVideoCapturer() {
         Log.d(TAG, "Destroy")
     }
 
-    fun resize(width: Int, height: Int) {
-        this.width = width
-        this.height = height
-    }
-
     fun sendFrame(imageBuffer: ByteBuffer, imageWidth: Int, imageHeight: Int) {
         provideBufferFrame(imageBuffer, pixelFormat, imageWidth, imageHeight, 0, false)
     }
