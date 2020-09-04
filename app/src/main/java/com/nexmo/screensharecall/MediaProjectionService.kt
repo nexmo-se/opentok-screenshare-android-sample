@@ -127,7 +127,10 @@ class MediaProjectionService : Service(), ImageReader.OnImageAvailableListener {
     private fun createVirtualDisplay() {
         Log.i(TAG, "Creating Virtual Display [$width x $height]")
 
+        // Create Image Reader
         imageReader = ImageReader.newInstance(width, height, PixelFormat.RGBA_8888, 2)
+
+        // Create Virtual Display
         virtualDisplay = mediaProjection.createVirtualDisplay(
             SCREEN_CAPTURE_NAME,
             width,
@@ -138,6 +141,8 @@ class MediaProjectionService : Service(), ImageReader.OnImageAvailableListener {
             null,
             null
         )
+
+        // Setup Image Available Listener
         try {
             Log.d(TAG, "Setting Image Available Listener")
             val handler = Handler(Looper.getMainLooper())
@@ -150,14 +155,16 @@ class MediaProjectionService : Service(), ImageReader.OnImageAvailableListener {
     override fun onImageAvailable(reader: ImageReader?) {
         val image = reader?.acquireLatestImage() ?: return
         image.use {
+            // Get Image Buffer
             val imagePlane = image.planes[0]
             val imageBuffer = imagePlane.buffer
 
+            // Compute Width (to avoid image distortion on certain devices)
             val rowStride = imagePlane.rowStride
             val pixelStride = imagePlane.pixelStride
             val width = rowStride / pixelStride
 
-            // Send image frame data
+            // Send Image Frame Data
             sendFrame(imageBuffer, width, image.height)
         }
     }

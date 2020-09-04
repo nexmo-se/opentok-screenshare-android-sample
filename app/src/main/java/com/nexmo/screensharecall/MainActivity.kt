@@ -25,11 +25,9 @@ class MainActivity : AppCompatActivity(), Session.SessionListener, PublisherKit.
     companion object {
         const val TAG = "MainActivity"
 
-        const val API_KEY = "46481982"
-        const val SESSION_ID =
-            "2_MX40NjQ4MTk4Mn5-MTU5OTExNTMyNDE5NH5pSjBMTUVEeG84Q2lEMXVPelBvcDhKNVh-fg"
-        const val TOKEN =
-            "T1==cGFydG5lcl9pZD00NjQ4MTk4MiZzaWc9NzE4MDFjMjFkNTdmYzcwNDY3ZTcwODRjZTRmZDg5ZGQ5Zjc5NWY4NTpzZXNzaW9uX2lkPTJfTVg0ME5qUTRNVGs0TW41LU1UVTVPVEV4TlRNeU5ERTVOSDVwU2pCTVRVVkVlRzg0UTJsRU1YVlBlbEJ2Y0RoS05WaC1mZyZjcmVhdGVfdGltZT0xNTk5MTE1MzM1Jm5vbmNlPTAuNTE1OTU0OTQwMTEyNDYyMSZyb2xlPXB1Ymxpc2hlciZleHBpcmVfdGltZT0xNTk5MjAxNzM1JmluaXRpYWxfbGF5b3V0X2NsYXNzX2xpc3Q9"
+        const val API_KEY = "apikey"
+        const val SESSION_ID = "sessionid"
+        const val TOKEN = "token"
 
         const val RC_VIDEO_APP_PERM = 124
         const val RC_SCREEN_CAPTURE = 125
@@ -76,6 +74,7 @@ class MainActivity : AppCompatActivity(), Session.SessionListener, PublisherKit.
     }
 
     override fun onDestroy() {
+        // On app killed, disconnect from session and unbind service
         disconnect(false)
 
         if (mediaProjectionServiceIsBound) {
@@ -106,11 +105,17 @@ class MainActivity : AppCompatActivity(), Session.SessionListener, PublisherKit.
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         if (requestCode == RC_SCREEN_CAPTURE) {
+            // This is the result from requesting for Media Projection (screenshare) from Android OS
+
+            // Bind to Foreground Service that does Media Projection
+            // - Note: On newer Android versions, Media Projection need to be run on a Foreground Service.
+            //         Regular Activity will cause it to crash.
             val intent = Intent(this, MediaProjectionService::class.java)
             intent.putExtra("resultCode", resultCode)
             intent.putExtra("data", data)
             bindService(intent, connection, Context.BIND_AUTO_CREATE)
 
+            // Setup Publisher for Screenshare and Publish to Session
             publishScreen()
         } else {
             super.onActivityResult(requestCode, resultCode, data)
@@ -132,22 +137,28 @@ class MainActivity : AppCompatActivity(), Session.SessionListener, PublisherKit.
             shareScreenButton = findViewById(R.id.sharescreen_button)
             disconnectButton = findViewById(R.id.disconnect_button)
 
+            // Setup callback for Screenshare Button
             shareScreenButton.setOnClickListener {
                 if (publisherScreen == null) {
+                    // Screenshare is not on, so turn on screenshare
                     Log.d(TAG, "Initiate Screenshare")
                     requestScreenCapture()
                     shareScreenButton.text = "Stop Screenshare"
                 } else {
+                    // Screenshare is on, so turn off screenshare
                     Log.d(TAG, "Ending Screenshare")
                     unpublishScreen()
                     shareScreenButton.text = "Start Screenshare"
                 }
             }
 
+            // Setup callback for Disconnect Button
             disconnectButton.setOnClickListener {
+                // Disconnect session
                 disconnect(true)
             }
 
+            // Create and Connect to Session
             session = Session.Builder(this, API_KEY, SESSION_ID).build()
             session.setSessionListener(this)
             session.connect(TOKEN)
@@ -166,10 +177,12 @@ class MainActivity : AppCompatActivity(), Session.SessionListener, PublisherKit.
             getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
         val intent = projectionManager.createScreenCaptureIntent()
 
+        // Send Intent to get Media Projection (screenshare)
         startActivityForResult(intent, 125)
     }
 
     private fun publishCamera() {
+        // Create and publish camera
         if (publisherMain == null) {
             publisherMain = Publisher.Builder(this).build()
             publisherMain!!.setPublisherListener(this)
@@ -186,6 +199,7 @@ class MainActivity : AppCompatActivity(), Session.SessionListener, PublisherKit.
     }
 
     private fun publishScreen() {
+        // Create and publish screenshare
         if (customVideoCapturer == null) {
             Log.d(TAG, "Creating Custom Video Capturer")
             customVideoCapturer = CustomVideoCapturer()
@@ -196,6 +210,8 @@ class MainActivity : AppCompatActivity(), Session.SessionListener, PublisherKit.
             publisherScreen = Publisher.Builder(this)
                 .capturer(customVideoCapturer)
                 .build()
+            publisherScreen!!.publisherVideoType = PublisherKit.PublisherKitVideoType.PublisherKitVideoTypeScreen
+            publisherScreen!!.audioFallbackEnabled = false
             publisherScreen!!.setPublisherListener(this)
 
             Log.d(TAG, "Publishing Screen")
@@ -204,6 +220,7 @@ class MainActivity : AppCompatActivity(), Session.SessionListener, PublisherKit.
     }
 
     private fun unpublishCamera() {
+        // Unpublish Camera and Stop Capture (release hold on camera)
         if (publisherMain != null) {
             Log.d(TAG, "Unpublishing Camera")
             session.unpublish(publisherMain)
@@ -214,6 +231,7 @@ class MainActivity : AppCompatActivity(), Session.SessionListener, PublisherKit.
     }
 
     private fun unpublishScreen() {
+        // Unpublish Screen and Stop Capture
         if (publisherScreen != null) {
             Log.d(TAG, "Unpublishing Screen")
             session.unpublish(publisherScreen)
@@ -224,6 +242,8 @@ class MainActivity : AppCompatActivity(), Session.SessionListener, PublisherKit.
     }
 
     override fun onStreamDropped(p0: Session?, p1: Stream?) {
+        // When a stream is dropped from session, remove all stream views
+        // TODO Note: You should keep track of all stream view and remove only the dropped stream view
         Log.d(TAG, "Stream Dropped")
         subscriberViewContainer.removeAllViews()
     }
@@ -231,12 +251,14 @@ class MainActivity : AppCompatActivity(), Session.SessionListener, PublisherKit.
     override fun onStreamReceived(p0: Session?, p1: Stream?) {
         Log.d(TAG, "Stream Received")
 
+        // Subscribe to new stream
         val subscriber = Subscriber.Builder(this, p1).build()
         session.subscribe(subscriber)
         subscribers.add(subscriber)
 
         val subscriberView = subscriber!!.view
 
+        // Add stream view to screen
         val frameLayout = FrameLayout(this)
         frameLayout.layoutParams = ViewGroup.LayoutParams(p1?.videoWidth ?: 240, p1?.videoHeight ?: 320)
         frameLayout.addView(subscriberView)
@@ -245,6 +267,8 @@ class MainActivity : AppCompatActivity(), Session.SessionListener, PublisherKit.
 
     override fun onConnected(p0: Session?) {
         Log.d(TAG, "Session Connected")
+
+        // Automatically publish the camera upon connected to session
         publishCamera()
     }
 
