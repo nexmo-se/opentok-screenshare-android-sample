@@ -1,12 +1,14 @@
 package com.nexmo.screensharecall
 
 import android.Manifest
-import android.content.ComponentName
-import android.content.Context
-import android.content.Intent
-import android.content.ServiceConnection
+import android.content.*
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import android.media.projection.MediaProjectionManager
 import android.opengl.GLSurfaceView
+import android.os.BatteryManager
 import android.os.Bundle
 import android.os.IBinder
 import android.util.Log
@@ -14,6 +16,7 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.LinearLayout
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.opentok.android.*
 import pub.devrel.easypermissions.AfterPermissionGranted
@@ -21,13 +24,13 @@ import pub.devrel.easypermissions.EasyPermissions
 import java.nio.ByteBuffer
 import java.util.*
 
-class MainActivity : AppCompatActivity(), Session.SessionListener, PublisherKit.PublisherListener, MediaProjectionHandler {
+class MainActivity : AppCompatActivity(), Session.SessionListener, PublisherKit.PublisherListener, MediaProjectionHandler, SensorEventListener, TemperatureMonitorListener {
     companion object {
         const val TAG = "MainActivity"
 
-        const val API_KEY = "apikey"
-        const val SESSION_ID = "sessionid"
-        const val TOKEN = "token"
+        const val API_KEY = "46481982"
+        const val SESSION_ID = "1_MX40NjQ4MTk4Mn5-MTYwMDY2MjkxMjk4M35YLzEyODZOczBXOGhqWEpTRTdleHF1UlB-fg"
+        const val TOKEN = "T1==cGFydG5lcl9pZD00NjQ4MTk4MiZzaWc9Njg5MGU5OGExN2I0MzU1ZmVjZjI3NWQ1ZmM1ZTk3NDUzYzE5YzAzZTpzZXNzaW9uX2lkPTFfTVg0ME5qUTRNVGs0TW41LU1UWXdNRFkyTWpreE1qazRNMzVZTHpFeU9EWk9jekJYT0docVdFcFRSVGRsZUhGMVVsQi1mZyZjcmVhdGVfdGltZT0xNjAwNzYxMzczJm5vbmNlPTAuNDcyNjA4MTAxOTQ1MzE4MyZyb2xlPXB1Ymxpc2hlciZleHBpcmVfdGltZT0xNjAwODQ3NzczJmluaXRpYWxfbGF5b3V0X2NsYXNzX2xpc3Q9"
 
         const val RC_VIDEO_APP_PERM = 124
         const val RC_SCREEN_CAPTURE = 125
@@ -35,12 +38,16 @@ class MainActivity : AppCompatActivity(), Session.SessionListener, PublisherKit.
 
     private lateinit var session: Session
 
+    private lateinit var sensorManager: SensorManager
+    private var ambientTemperatureSensor: Sensor? = null
 
+    private lateinit var monitorContainer: LinearLayout
     private lateinit var publisherViewContainer: FrameLayout
     private lateinit var subscriberViewContainer: LinearLayout
     private lateinit var shareScreenButton: Button
     private lateinit var disconnectButton: Button
 
+    private var temperatureMonitor: TemperatureMonitor? = null
     private var customVideoCapturer: CustomVideoCapturer? = null
 
     private var publisherMain: Publisher? = null
@@ -49,6 +56,8 @@ class MainActivity : AppCompatActivity(), Session.SessionListener, PublisherKit.
 
     private var mediaProjectionServiceIsBound: Boolean = false
     private var mediaProjectionBinder: MediaProjectionBinder? = null
+
+    private var startTime: Long = 0
 
     private val connection = object : ServiceConnection {
         override fun onServiceDisconnected(name: ComponentName?) {
@@ -70,10 +79,35 @@ class MainActivity : AppCompatActivity(), Session.SessionListener, PublisherKit.
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
+        ambientTemperatureSensor = sensorManager.getDefaultSensor(Sensor.TYPE_AMBIENT_TEMPERATURE)
+        if (ambientTemperatureSensor == null) {
+            Log.d(TAG, "Sensor (Ambient) - not available, trying temperature sensor")
+            ambientTemperatureSensor = sensorManager.getDefaultSensor(Sensor.TYPE_TEMPERATURE)
+            if (ambientTemperatureSensor == null) {
+                Log.d(TAG, "Sensor (Temperature) - not available")
+            }
+        }
+
+        startTime = System.currentTimeMillis()
+
+        Log.d(TAG, "Registering Sensor Listener")
+        sensorManager.registerListener(this, ambientTemperatureSensor, SensorManager.SENSOR_DELAY_NORMAL)
+
+        Log.d(TAG, "Starting Temperature Monitor")
+        temperatureMonitor = TemperatureMonitor(this)
+        temperatureMonitor?.start(30, this)
+
         requestPermissions()
     }
 
     override fun onDestroy() {
+        Log.d(TAG, "Stopping Temperature Monitor")
+        temperatureMonitor?.stop()
+
+        Log.d(TAG, "Unregistering Sensor Listener")
+        sensorManager.unregisterListener(this)
+
         // On app killed, disconnect from session and unbind service
         disconnect(false)
 
@@ -132,6 +166,7 @@ class MainActivity : AppCompatActivity(), Session.SessionListener, PublisherKit.
         )
 
         if (EasyPermissions.hasPermissions(this, *perms)) {
+            monitorContainer = findViewById(R.id.temperature_monitor_container)
             publisherViewContainer = findViewById(R.id.publisher_container)
             subscriberViewContainer = findViewById(R.id.subscriber_container)
             shareScreenButton = findViewById(R.id.sharescreen_button)
@@ -252,7 +287,32 @@ class MainActivity : AppCompatActivity(), Session.SessionListener, PublisherKit.
         Log.d(TAG, "Stream Received")
 
         // Subscribe to new stream
-        val subscriber = Subscriber.Builder(this, p1).build()
+        val subscriber = Subscriber.Builder(this, p1)
+            .build()
+        subscriber.setVideoListener(object: SubscriberKit.VideoListener {
+            override fun onVideoDataReceived(p0: SubscriberKit?) {
+//                Log.d(TAG, "onVideoDataReceived Received ${subscriber.stream.streamId}")
+            }
+
+            override fun onVideoEnabled(p0: SubscriberKit?, p1: String?) {
+//                Log.d(TAG, "onVideoEnabled Received ${subscriber.stream.streamId}")
+            }
+
+            override fun onVideoDisableWarning(p0: SubscriberKit?) {
+                Log.d(TAG, "onVideoDisableWarning Received ${subscriber.stream.streamId}")
+            }
+
+            override fun onVideoDisableWarningLifted(p0: SubscriberKit?) {
+                Log.d(TAG, "onVideoDisableWarningLifted Received ${subscriber.stream.streamId}")
+            }
+
+            override fun onVideoDisabled(p0: SubscriberKit?, p1: String?) {
+//                Log.d(TAG, "onVideoDisabled Received ${subscriber.stream.streamId}")
+            }
+
+        })
+
+
         session.subscribe(subscriber)
         subscribers.add(subscriber)
 
@@ -269,7 +329,7 @@ class MainActivity : AppCompatActivity(), Session.SessionListener, PublisherKit.
         Log.d(TAG, "Session Connected")
 
         // Automatically publish the camera upon connected to session
-        publishCamera()
+//        publishCamera()
     }
 
     override fun onDisconnected(p0: Session?) {
@@ -294,5 +354,35 @@ class MainActivity : AppCompatActivity(), Session.SessionListener, PublisherKit.
 
     override fun sendFrame(imageBuffer: ByteBuffer, width: Int, height: Int) {
         customVideoCapturer?.sendFrame(imageBuffer, width, height)
+    }
+
+    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
+        val now = System.currentTimeMillis()
+        Log.d(TAG, "Sensor ($now) - Accuracy Changed - $accuracy")
+    }
+
+    override fun onSensorChanged(event: SensorEvent?) {
+        val value = event?.values?.get(0) ?: -1
+        val now = System.currentTimeMillis()
+        Log.d(TAG, "Sensor ($now) - Sensor Changed - $value")
+
+        runOnUiThread {
+            val textView = TextView(this)
+            textView.text = "Sensor (${(now - startTime) / 1000}s): $value"
+
+            monitorContainer.addView(textView)
+        }
+    }
+
+    override fun onTemperature(temperature: Double) {
+        val now = System.currentTimeMillis()
+        Log.d(TAG, "Sensor ($now) - Battery Temp - $temperature C")
+
+        runOnUiThread {
+            val textView = TextView(this)
+            textView.text = "Battery (${(now - startTime) / 1000}s): $temperature"
+
+            monitorContainer.addView(textView)
+        }
     }
 }

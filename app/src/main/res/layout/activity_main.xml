@@ -17,6 +17,17 @@
             android:gravity="center_horizontal"
             android:orientation="vertical">
 
+            <LinearLayout
+                android:id="@+id/temperature_monitor_container"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="100dp"
+                android:orientation="vertical"
+                android:visibility="gone"
+                android:background="#e8e8e8">
+
+            </LinearLayout>
+
         </LinearLayout>
     </ScrollView>
 
