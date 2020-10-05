@@ -1,2 +1,2 @@
-include ':app', ':opentok-android-sdk-2.18.1'
+include ':app'
 rootProject.name='Screenshare Call'
