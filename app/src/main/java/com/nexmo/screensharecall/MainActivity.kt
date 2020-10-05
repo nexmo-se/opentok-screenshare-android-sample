@@ -291,11 +291,11 @@ class MainActivity : AppCompatActivity(), Session.SessionListener, PublisherKit.
             .build()
         subscriber.setVideoListener(object: SubscriberKit.VideoListener {
             override fun onVideoDataReceived(p0: SubscriberKit?) {
-//                Log.d(TAG, "onVideoDataReceived Received ${subscriber.stream.streamId}")
+                Log.d(TAG, "onVideoDataReceived Received ${subscriber.stream.streamId}")
             }
 
             override fun onVideoEnabled(p0: SubscriberKit?, p1: String?) {
-//                Log.d(TAG, "onVideoEnabled Received ${subscriber.stream.streamId}")
+                Log.d(TAG, "onVideoEnabled Received ${subscriber.stream.streamId}")
             }
 
             override fun onVideoDisableWarning(p0: SubscriberKit?) {
@@ -307,7 +307,7 @@ class MainActivity : AppCompatActivity(), Session.SessionListener, PublisherKit.
             }
 
             override fun onVideoDisabled(p0: SubscriberKit?, p1: String?) {
-//                Log.d(TAG, "onVideoDisabled Received ${subscriber.stream.streamId}")
+                Log.d(TAG, "onVideoDisabled Received ${subscriber.stream.streamId}")
             }
 
         })
@@ -365,24 +365,10 @@ class MainActivity : AppCompatActivity(), Session.SessionListener, PublisherKit.
         val value = event?.values?.get(0) ?: -1
         val now = System.currentTimeMillis()
         Log.d(TAG, "Sensor ($now) - Sensor Changed - $value")
-
-        runOnUiThread {
-            val textView = TextView(this)
-            textView.text = "Sensor (${(now - startTime) / 1000}s): $value"
-
-            monitorContainer.addView(textView)
-        }
     }
 
     override fun onTemperature(temperature: Double) {
         val now = System.currentTimeMillis()
         Log.d(TAG, "Sensor ($now) - Battery Temp - $temperature C")
-
-        runOnUiThread {
-            val textView = TextView(this)
-            textView.text = "Battery (${(now - startTime) / 1000}s): $temperature"
-
-            monitorContainer.addView(textView)
-        }
     }
 }
