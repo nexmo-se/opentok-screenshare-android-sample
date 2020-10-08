@@ -28,9 +28,9 @@ class MainActivity : AppCompatActivity(), Session.SessionListener, PublisherKit.
     companion object {
         const val TAG = "MainActivity"
 
-        const val API_KEY = "46481982"
-        const val SESSION_ID = "1_MX40NjQ4MTk4Mn5-MTYwMDY2MjkxMjk4M35YLzEyODZOczBXOGhqWEpTRTdleHF1UlB-fg"
-        const val TOKEN = "T1==cGFydG5lcl9pZD00NjQ4MTk4MiZzaWc9Njg5MGU5OGExN2I0MzU1ZmVjZjI3NWQ1ZmM1ZTk3NDUzYzE5YzAzZTpzZXNzaW9uX2lkPTFfTVg0ME5qUTRNVGs0TW41LU1UWXdNRFkyTWpreE1qazRNMzVZTHpFeU9EWk9jekJYT0docVdFcFRSVGRsZUhGMVVsQi1mZyZjcmVhdGVfdGltZT0xNjAwNzYxMzczJm5vbmNlPTAuNDcyNjA4MTAxOTQ1MzE4MyZyb2xlPXB1Ymxpc2hlciZleHBpcmVfdGltZT0xNjAwODQ3NzczJmluaXRpYWxfbGF5b3V0X2NsYXNzX2xpc3Q9"
+        const val API_KEY = "api-key"
+        const val SESSION_ID = "session-id"
+        const val TOKEN = "token"
 
         const val RC_VIDEO_APP_PERM = 124
         const val RC_SCREEN_CAPTURE = 125
@@ -213,7 +213,7 @@ class MainActivity : AppCompatActivity(), Session.SessionListener, PublisherKit.
         val intent = projectionManager.createScreenCaptureIntent()
 
         // Send Intent to get Media Projection (screenshare)
-        startActivityForResult(intent, 125)
+        startActivityForResult(intent, RC_SCREEN_CAPTURE)
     }
 
     private fun publishCamera() {
@@ -327,9 +327,6 @@ class MainActivity : AppCompatActivity(), Session.SessionListener, PublisherKit.
 
     override fun onConnected(p0: Session?) {
         Log.d(TAG, "Session Connected")
-
-        // Automatically publish the camera upon connected to session
-//        publishCamera()
     }
 
     override fun onDisconnected(p0: Session?) {
