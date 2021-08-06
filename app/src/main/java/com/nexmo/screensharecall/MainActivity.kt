@@ -28,9 +28,9 @@ class MainActivity : AppCompatActivity(), Session.SessionListener, PublisherKit.
     companion object {
         const val TAG = "MainActivity"
 
-        const val API_KEY = "api-key"
-        const val SESSION_ID = "session-id"
-        const val TOKEN = "token"
+        const val API_KEY = "46212282"
+        const val SESSION_ID = "2_MX40NjIxMjI4Mn5-MTYyODI0MTc3MjIzNH5JNXJ4aUwxYmZrenpLR2llUDZjalhnd2h-fg"
+        const val TOKEN = "T1==cGFydG5lcl9pZD00NjIxMjI4MiZzaWc9ODQ4NGFlYjM0Mzc5MGQ0YjFkOTM1ZTMzYTUyZTA2YTQ4MWZkODVmNjpzZXNzaW9uX2lkPTJfTVg0ME5qSXhNakk0TW41LU1UWXlPREkwTVRjM01qSXpOSDVKTlhKNGFVd3hZbVpyZW5wTFIybGxVRFpqYWxobmQyaC1mZyZjcmVhdGVfdGltZT0xNjI4MjQxNzcyJm5vbmNlPTAuNzM4ODY4MTE1NDgwMTY4JnJvbGU9bW9kZXJhdG9yJmV4cGlyZV90aW1lPTE2MzA4MzM3NzImaW5pdGlhbF9sYXlvdXRfY2xhc3NfbGlzdD0="
 
         const val RC_VIDEO_APP_PERM = 124
         const val RC_SCREEN_CAPTURE = 125
